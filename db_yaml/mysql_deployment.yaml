@@ -111,4 +111,3 @@ volumeClaimTemplates:
     resources:
       requests:
         storage: 10Gi
----
