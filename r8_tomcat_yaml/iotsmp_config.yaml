@@ -1,0 +1,215 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-iotsmp-configmap
+  namespace: stagging
+data:
+  IoTSMP.properties: |
+    #Node Name - Unique Name to identify the Node or Instance. Used to provision accounts and network groups in Groups. 
+    instance.name=JIO_DEV
+
+    #Logging properties
+    log.gcontrol.file=/var/cmp/GControl.log
+    log.gcontrol.file.size=5120000
+    log.gcontrol.level=INFO
+    log.httpLog.file=/var/cmp/GControlHttp.log
+    log.httpLog.file.size=5120000
+    log.httpLog.level=INFO
+    log.gcontrol.MaxBackupIndex=5
+    log.httpLog.MaxBackupIndex=17
+
+    #DB properties:                                              
+    db.driver=com.mysql.cj.jdbc.Driver
+    db.url=jdbc:mysql://${DB_URL}/iotsmp_dev?useSSL=false
+    db.username=${DB_USERNAME}
+    db.password=${DB_PASSWORD}
+    #db.username=root
+    #db.url=jdbc:mysql://192.168.1.114:3306/iotsmp_dev
+    #db.password=sacFwITZArC/z7+mFTxt1g==
+    #db.password=Admin@123
+
+    #db.url=jdbc:mysql://192.168.1.237:3306/globeconnect
+    #db.username=root
+    #db.password=Grappes@321
+  
+    #CDR DB Properties:
+    #cdr.db.driver=com.mysql.jdbc.Driver  
+    #cdr.db.url=jdbc:mysql://192.168.1.231:3306/jio_cdr_data
+    #cdr.db.username=root
+    #cdr.db.password=Ttpl@123
+
+    #Staging DB#########################
+    #db.url=jdbc:mysql://192.168.1.231:3306/iotsmp_staging
+    #db.username=root
+    #db.password=Ttpl@123
+
+    cdr.db.driver=com.mysql.cj.jdbc.Driver
+    cdr.db.url=jdbc:mysql://${DB_URL}/iotsmp_cdr_data?useSSL=false
+    cdr.db.username=${DB_USERNAME}
+    cdr.db.password=${DB_PASSWORD}
+    #cdr.db.url=jdbc:mysql://192.168.1.114:3306/iotsmp_cdr_data
+    #cdr.db.username=root
+    #cdr.db.password=sacFwITZArC/z7+mFTxt1g==
+    #cdr.db.password=Admin@123
+
+    #Hibernate Configuration:
+    hibernate.dialect=org.hibernate.dialect.MySQLDialect
+    hibernate.show_sql=true
+    entitymanager.packages.to.scan=com.globetouch.iotsmp.bo,com.globetouch.iotsmp.vo
+
+    hibernate.connection.CharSet=utf8
+    hibernate.connection.characterEncoding=utf8
+    hibernate.connection.useUnicode=true
+                                                
+    hibernate.cache.use_second_level_cache=true
+    hibernate.cache.use_query_cache=true
+    hibernate.generate_statistics=true
+    hibernate.lazy=false
+
+    #Hibernate Configuration For C3P0:
+    hibernate.c3p0.min_size=20
+    hibernate.c3p0.max_size=40
+    hibernate.c3p0.timeout=300
+    hibernate.c3p0.max_statements=50
+    hibernate.c3p0.idle_test_period=3000
+
+    #
+    # Enable below for Hazelcast
+    #
+    hibernate.cache.region.factory_class=com.hazelcast.hibernate.HazelcastCacheRegionFactory
+    hibernate.cache.hazelcast.use_native_client = false
+    hibernate.cache.hazelcast.native_client_address =127.0.0.1:1701
+    hibernate.cache.hazelcast.native_client_group =dev
+    hibernate.cache.hazelcast.native_client_password=dev-pass
+    hibernate.cache.provider_configuration_file_resource_path=hazelcast.xml
+    hibernate.cache.hazelcast.configuration_file_path=hazelcast.xml
+
+    #
+    # Enable below for ehcache. 
+    #
+    #org.hibernate.cache.ehcache.configurationResourceName=/ehcache.xml
+    #hibernate.cache.region.factory_class=org.hibernate.cache.ehcache.SingletonEhCacheRegionFactory
+
+
+    #Input directory for SIM Files
+    input.file.dir=/home/mandeepsingh/Roamware/IoTSMP/input/
+
+    #Email configuration for sending mails
+    mail.transport.protocol=smtp
+    mail.smtp.host=smtp.mandrillapp.com
+    mail.smtp.port=587
+    mail.username=bjorn.knudsen@foggmobile.com
+    mail.password=tUh_ds-GhKhr5qMVHcoTWQ
+    mail.from=gcontrol@globetouch.com
+    mail.personal=GControl
+    mail.smtp.starttls.enable=true
+    mail.smtp.auth=true
+    mail.debug.enable=false
+
+
+    ####PASSWORD ERROR MESSAGE#####
+    PASSWORD_MISMATCH_ERROR = Password Mismatch
+    PASSWORD_REQUIRED = Please provide the password
+    PASSWORD_LENGTH_ERROR = Password length must be between 8 to 16 characters
+    PASSWORD_POLICY_ERROR = Please provide password according to password policy
+
+    SERVER_ERROR = Please Try Again ! 
+
+  
+    ### Scheduling Configuration ####
+    ## Below parameters  are for configuring scheduling intervals
+    ##
+    ## +-------------------- second (0 - 59)
+    ## |  +----------------- minute (0 - 59)
+    ## |  |  +-------------- hour (0 - 23)
+    ## |  |  |  +----------- day of month (1 - 31)
+    ## |  |  |  |  +-------- month (1 - 12)
+    ## |  |  |  |  |  +----- day of week (0 - 6) (Sunday=0 or 7)
+    ## |  |  |  |  |  |  +-- year [optional]
+    ## |  |  |  |  |  |  |
+    ## For example, f you want to run a command every 30 minutes you can say either of these:
+    ## 0 0/30 * * * * ?
+    ## 0 0,30 * * * * ?
+    rate.plan.update.interval=0 0 0 * * *
+    data.usage.polling.interval=0 0 0 * * *
+    wholesale.billing.interval=0 0 0 1 * *
+
+    #check.batch.job.register.interval=600000
+    #check.batch.job.suspend.interval=60000
+    #check.batch.job.resume.interval=6000000
+    #check.batch.job.remove.interval=6000000
+    #process.api.request.interval=60000
+    #process.check.expired.purchase=60000000
+
+    check.batch.job.register.interval=0 0 0 1 * *
+    check.batch.job.suspend.interval=0 0 0 1 * *
+    check.batch.job.resume.interval=0 0 0 1 * *
+    check.batch.job.remove.interval=0 0 0 1 * *
+    process.api.request.interval=0 * * * * *
+    process.check.expired.purchase=0 0 0 1 * *
+
+    ### Scheduling Configuration ####
+    delete.expired.tokens=0 0 */3 * * *
+    update.status=0 0 */1 * * *
+    block.inactive.users=0 0 */3 * * *
+    lock.reminder.email=0 0 2 * * *
+
+
+    m2m_iot.classifier.export.fields=iccid,imsi,msisdn,state,dataUsage,createDate,ratePlan_Name,locationCoverage_CoverageName,servicePlan_ServicePlanName,entAccount_Name,activationDate,inSession,apn,nextRatePlan_Name,billingCycle,dataUsageLimit,location,network,subscriberName,subscriberEmail
+    travel_sim.classifier.export.fields=iccid,imsi,msisdn,state,servicePlan_ServicePlanName,entAccount_Name,activationDate,inSession,location,network,subscriberName,subscriberEmail,deviceId
+    connected_car.classifier.export.fields=iccid,imsi,msisdn,state,servicePlan_ServicePlanName,entAccount_Name,activationDate,inSession,location,network,subscriberName,subscriberEmail,deviceId
+
+    #RedShift Configuration
+    external.sim.card.database.username=testuser
+    external.sim.card.database.password=testR3dShift
+    external.sim.card.database.driver=com.amazon.redshift.jdbc.Driver
+    external.sim.card.database.dialect=org.hibernate.dialect.PostgreSQLDialect
+    external.sim.card.database.bdm2dll.auto=none
+    external.sim.card.database.url=jdbc:redshift://bss-dev.ctwabksvamwk.eu-central-1.redshift.amazonaws.com:5439/dev
+    external.sim.card.database.validation.query=SELECT 1
+    external.sim.card.database.default.schema=sim_information 
+
+
+    #CloudSIM Interface
+    #URL for Service Control API
+    cloudsim.service.control.url=http://10.241.8.76:8494/CSIMWebService
+    cloudsim.service.control.url=http://185.39.54.87:8484/CSIMWebService
+
+    support.email=mandeep.singh@globetouch.com
+
+    #Hadoop
+    hbase.zookeeper.quorum=10.221.86.32
+    hbase.zookeeper.property.clientPort=2181
+    hbase.rootdir=hdfs://10.221.86.32:16000
+    table.cdr.data.details=cdr_data_details
+
+    #CloudSIM Interface
+    #URL for Service Control API
+    #cloudsim.service.control.url=http://10.241.8.76:8494/CSIMWebService
+    cloudsim.service.control.url=http://192.168.102.38:8484/CSIMWebService
+
+    support.email=mandeep.singh@globetouch.com
+
+    # Property for custom number of failure attempts
+        max.wrong.attempts=5
+    # Property for defining inactive days after which user will be blocked.
+        inactive.days.before.blocking=3
+    # Property for defining reminder days before blocking inactive user.
+        reminder.th.days.before.blocking=2,3
+
+    session.wise.sim.data.usage.change.bit=1
+    hbase.database.table.name=cdr_raw_data_damler
+    hbase.database.table.column.faimly=cdr
+
+    data.session.details=apnId,chargingId,creation_date,creation_time,downBytes,plmn,ratType,recordType,servedIMSI,servedImeiSV,servingNodePlmnId,sessionIp,sgsnMme,sgwPgw,startTime,stopTime,totalBytes,totalBytesInKb,upBytes
+    hbase.database.sms.table.name=sms_cdr_raw_data
+    sms.details=attempts,destination,destinationGT,finalTime,msisdn,organizationGT,reason,sentTime,smsStatus,smsType,source,subscriberImsi
+
+    #for true 1 fir false 0
+    is.kerberos.enabled=1
+    kerberos.conf.path=/var/cmp/krb5.conf
+    kerberos.keytab.path=/var/cmp/ttpl.keytab
+    kerberos.keytab.user=ttpl@EXAMPLE.COM
+
+    access.token.validity=1000000
+    refresh.token.validity=1000000

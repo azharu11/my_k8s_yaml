@@ -1,0 +1,149 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+ name: tomcat-pvc
+ annotations:
+   volume.beta.kubernetes.io/storage-class: glusterfs
+spec:
+ accessModes:
+  - ReadWriteOnce
+ resources:
+   requests:
+     storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: r8-TomcatAPI
+  name: tomcat-service
+  namespace: r8-stagging
+spec:
+  ports:
+  -
+    name: tomcat-port
+    protocol: TCP
+    port: 8443
+    targetPort: 8443
+  selector:
+    app: r8-TomcatAPI
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: r8-tomcat-deployment
+  namespace: r8-stagging
+  labels:
+    app: r8-TomcatAPI
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: r8-TomcatAPI
+  template:
+    metadata:
+      labels:
+        app: r8-TomcatAPI
+    spec:
+      imagePullSecrets:
+      -
+        name: git-image-pull-secret
+      containers:
+      -
+        image: "ghcr.io/peeyush-tm/gcontrol-api-spring/cmp-api-image:3.9.4.0-https"
+        name: tomcat-api
+        ports:
+        -
+          name: tomcat-port
+          containerPort: 8443
+        -
+          name: db-port
+          containerPort: 3306
+        env:
+        -
+          name: DB_USERNAME
+          valueFrom:
+            secretKeyRef: 
+              name: db-credential-secret
+              key: db-root-user
+        -
+          name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-credential-secret
+              key: db-root-password
+        -
+          name: DB_URL
+          valueFrom:
+            configMapKeyRef: 
+              name: dburl-configmap
+              key: database_url
+        -
+          name: HBASE_PROPERTIES
+          value: /var/cmp/hbase-site.xml
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8443
+            scheme: HTTPS
+          initialDelaySeconds: 100
+          periodSeconds: 20
+          timeoutSeconds: 2
+        volumeMounts:
+        -
+          name: tomcat-volume
+          mountPath: /var/cmp/
+        -
+          name: iotsmp-config-volume
+          mountPath: /var/cmp/IoTSMP.properties
+          subPath: IoTSMP.properties
+        -
+          name: hbase-sitexml-config-volume
+          mountPath: /var/cmp/hbase-site.xml
+          subPath: hbase-site.xml
+        -
+          name: hbase-krbconf-config-volume
+          mountPath: /var/cmp/krb5.conf
+          subPath: krb5.conf
+        -
+          name: hbase-keytab-config-volume
+          mountPath: /var/cmp/ttpl.keytab
+          subPath: ttpl.keytab
+      volumes:
+      -
+        name: tomcat-volume
+        persistentVolumeClaim:
+          claimName: tomcat-pvc
+      -
+        name: iotsmp-config-volume
+        configMap:
+          name: api-iotsmp-configmap
+      -
+        name: hbase-sitexml-config-volume
+        configMap:
+          name: hbase-site-configmap
+      -
+        name: hbase-krbconf-config-volume
+        configMap:
+          name: hbase-keytab-configmap
+      -
+        name: hbase-keytab-config-volume
+        configMap:
+          name: hbase-krbconf-configmap
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tomcat-service
+  namespace: r8-stagging
+spec:
+  type: NodePort
+  ports:
+  -
+    name: tomcat-port
+    protocol: TCP
+    port: 8443
+    targetPort: 8443
+  selector:
+    app: r8-TomcatAPI

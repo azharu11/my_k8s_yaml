@@ -1,0 +1,211 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+ name: nodeapi-pvc
+ annotations:
+   volume.beta.kubernetes.io/storage-class: glusterfs
+spec:
+ accessModes:
+  - ReadWriteOnce
+ resources:
+   requests:
+     storage: 5Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nodeapi-cm
+  namespace: r8-stagging
+data:
+  config.js: |
+    const APP_CONFIG = require('./../config');
+    /** Configuration for Web application **/
+    const WEB_APP = {
+      // PORT: 8080,
+      BSS_TIMEZONE: 330,
+      PROTOCOL: "https",
+      DOMAIN: "localhost",
+      //To show browser compatibility page make it true
+      BROWSER_COMPATIBILITY_ENABLE:true,
+      // To hide OIAM support make it false
+      OIAM_ENABLED: true,
+      HOST: "0.0.0.0",
+      // Reports: To hide Account Dropdown make it true
+      ACCOUNT_HBASE_CONFIGURATION: false,
+      /**  
+      * Manage Device Page: Action to perform on SIM on basis of account type   
+      *
+      * Possible values are:
+      * ASSIGN_RATE_PLAN, ASSIGN_SERVICE_PLAN, ASSIGN_APN, ASSIGN_SERVICE_COVERAGE,
+      * CHANGE_STATE, ASSIGN_DATA_PLAN, CHANGE_BILLING_CYCLE, ASSIGN_SMS_TEMPLATE
+      */
+      ACTION: {
+        GTADMIN: ["CHANGE_STATE"],
+        E_SIM: ["ASSIGN_SERVICE_PLAN", "ASSIGN_DATA_PLAN", "CHANGE_STATE", "ASSIGN_SMS_TEMPLATE"],
+        M2M_IoT: ["ASSIGN_RATE_PLAN", "ASSIGN_SERVICE_PLAN", "ASSIGN_APN", "ASSIGN_SERVICE_COVERAGE", "CHANGE_BILLING_CYCLE", "CHANGE_STATE", "ASSIGN_SMS_TEMPLATE"],
+        TRAVEL_SIM: ["ASSIGN_SERVICE_PLAN", "ASSIGN_DATA_PLAN", "CHANGE_STATE", "ASSIGN_SMS_TEMPLATE"]
+      },
+      /**
+      * Advance Troubleshoot Page: To hide a tab change its value to false or to hide 
+      * internal tabs change internal tabs value to false 
+      */
+      SIM_DASHBOARD_TAB: {
+        ACTIONS: true,
+        LIVE_TIMELINE: true,
+        AGGREGATED_TIMELINE: true,
+        OTHERS_LIVE: true,
+        OTHERS_HISTORY: true,
+        INTERNAL_TABS: {
+          ACTIONS: { sendSms: true, actionHistory: true },
+          LIVE_TIMELINE: { data: true, sms: true },
+          AGGREGATED_TIMELINE: { data: true, sms: true },
+          OTHERS_LIVE: { threeGRegistration: true, fourGRegistration: true, eSIM: true, radius: true },
+          OTHERS_HISTORY: { threeGRegistration: true, fourGRegistration: true, eSIM: true, radius: true }
+        },
+        // RADIUS_INTERNAL_TABS: { AUTHENTICATION: true, ACCOUNTING: true }
+      },
+      /**
+      * It is used on API Logs page which indicates average number of records (Tracking Message Header detail) 
+      * for a tracking message header. We use it to calculate the total number of records that will be downloaded. 
+      * So if total no of tracking message header is 100 then no. of records that will download are: 
+      * 100 x AVG_RECORDS_PER_TRACKING_HEADER i.e 100 x 10 = 1000
+      */
+      AVG_RECORDS_PER_TRACKING_HEADER: 10
+    }
+
+    /** Configuration for Node API **/
+    const NODE_API = {
+      PORT: 8083,
+      IDP: {
+        CERTIFICATE: "idp.crt",
+        LOGIN_URL: `https://caphml.claro.com.br/oamfed/idp/samlv20`,
+        LOGOUT_URL: `https://caphml.claro.com.br/oam/server/logout`,
+        OIAM_LOGIN_URL: 'https://i.airlinq.com:3001/login'
+      },
+      LOGS: {
+        DATE_PATTERN: "YYYY-MM-DD",
+        MAX_FILES: 7,
+        // Replace it with the path where you want to make error logs folder (with trailing '/')
+        FOLDER_PATH: ""
+      },
+      VERSION: '1.0.3'
+    }
+
+    const CONFIG = {
+      CERTIFICATE: {
+        CERT: APP_CONFIG.CERT, // Certificate file name
+        KEY: APP_CONFIG.KEY  // Certificate key file name 
+      },
+      // Web application configuration
+      WEB_APP_HOST: WEB_APP.HOST,
+      WEB_APP_PORT: APP_CONFIG.WEB_APP_PORT,
+      OIAM_ENABLED: WEB_APP.OIAM_ENABLED,
+      API_URL: APP_CONFIG.API_URL,
+      ACCOUNT_HBASE_CONFIGURATION: WEB_APP.ACCOUNT_HBASE_CONFIGURATION,
+      WEB_APP_URL: `${WEB_APP.PROTOCOL}://${WEB_APP.DOMAIN}:${APP_CONFIG.WEB_APP_PORT}/`,
+      NODE_API_URL: APP_CONFIG.NODE_API_URL,
+      ACTION: { ...WEB_APP.ACTION },
+      SIM_DASHBOARD_TAB: { ...WEB_APP.SIM_DASHBOARD_TAB },
+      AVG_RECORDS_PER_TRACKING_HEADER: WEB_APP.AVG_RECORDS_PER_TRACKING_HEADER,
+      // Node Api configuration
+      NODE_API_PORT: NODE_API.PORT,
+      IDP_CERTIFICATE: NODE_API.IDP.CERTIFICATE,
+      LOGS: { ...NODE_API.LOGS },
+      IDP: {
+        LOGIN_URL: NODE_API.IDP.LOGIN_URL,
+        LOGOUT_URL: NODE_API.IDP.LOGOUT_URL,
+        OIAM_LOGIN_URL: NODE_API.IDP.OIAM_LOGIN_URL
+      },
+      NODE_BUILD_VERSION: NODE_API.VERSION,
+      BSS_TIMEZONE: WEB_APP.BSS_TIMEZONE,
+      GOOGLE_TAG_MANAGER_KEY: APP_CONFIG.GOOGLE_TAG_MANAGER_KEY,
+      BROWSER_COMPATIBILITY_ENABLE:WEB_APP.BROWSER_COMPATIBILITY_ENABLE
+    };
+    module.exports = CONFIG;
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nodeapi-service
+  namespace: r8-stagging
+spec:
+  ports:
+  -
+    name: nodeapi-port
+    protocol: TCP
+    port: 8083
+    targetPort: 8083
+  selector:
+    app: r8-NodeApi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: r8-NodeApi-deployment
+  namespace: r8-stagging
+  labels:
+    app: r8-NodeApi
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: r8-NodeApi
+  template:
+    metadata:
+      labels:
+        app: r8-NodeApi
+    spec:
+      imagePullSecrets:
+      -
+        name: git-image-pull-secret
+      containers:
+      -
+        image: "ghcr.io/peeyush-tm/gcontrol-ui-react/cmp-ui-error-logging:3.9.4.0"
+        name: nodeapi-container
+        ports:
+        -
+          name: err-port
+          containerPort: 8083
+        readinessProbe:
+          httpGet:
+            path: /getConfig
+            port: 8083
+            scheme: HTTPS
+          initialDelaySeconds: 50
+          periodSeconds: 10
+          timeoutSeconds: 2
+        volumeMounts:
+        -
+          name: nodeapi-cm-volume
+          mountPath: /nodeapi/NodeJsApi/config.js
+          subPath: config.js
+        -
+          name: nodeapi-log-volume
+          mountPath: /nodeapi/NodeJsApi/logs/
+      volumes:
+      -
+        name: nodeapi-cm-volume
+        configMap:
+          name: nodeapi-cm
+      -
+        name: nodeapi-log-volume
+        persistentVolumeClaim:
+          claimName: nodeapi-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nodeapi-expose-service
+  namespace: r8-stagging  
+spec:
+  type: NodePort
+  ports:
+  -
+    name: nodeapi-port
+    protocol: TCP
+    port: 8083
+    targetPort: 8083
+  selector:
+    app: r8-NodeApi
+/nodeapi/NodeJsApi/logs

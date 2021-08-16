@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-app-cm
+  namespace: r8-stagging
+data:
+  Config.js: |
+    /** Common configuration **/
+    const CONFIG = {
+      CERT: "airlinq_com.crt", // Certificate file name
+      KEY: "airlinq.key", // Certificate key file name
+      WEB_APP_PORT: 8082,
+      NODE_API_URL: "https://192.168.1.42:8083/",
+      API_URL: "https://i.airlinq.com:8019/",
+      // Google tag manager key for showing analytics on Google Analytics
+      GOOGLE_TAG_MANAGER_KEY: "GTM-5RVZHQH"
+    };
+    module.exports = CONFIG;
