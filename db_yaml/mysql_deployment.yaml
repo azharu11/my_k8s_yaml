@@ -111,10 +111,13 @@ volumeClaimTemplates:
     resources:
       requests:
         storage: 10Gi
+<<<<<<< HEAD
 ----
 commit-1
 ----
 
 ----
 commit-2
+=======
+>>>>>>> parent of 35a844e... Revert "commiting mysql file"
 ---
